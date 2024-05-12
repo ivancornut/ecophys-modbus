@@ -2,13 +2,44 @@ from micropython import const
 from umodbus.serial import ModbusRTU
 from machine import Pin, I2C
 from micropython_sht4x import sht4x
-import time
-import math
+import time, onewire, ds18x20, math, json
 
-i2c = I2C(1, sda=Pin(14), scl=Pin(15)) # Setting the pins for SHT45
-led = Pin(25, Pin.OUT)
+SHT45 = False
+DS18B20 = False
 
-CLIENT_ADDRESS = const(1)
+# Open the file containing parameters for this sensor node
+with open('client.json') as f:
+	read_data = f.read()
+
+# Parse the json file output
+params = json.loads(read_data)
+client_address = params["GENERAL"]["Client_ID"]
+nb_unique_sensors = params["GENERAL"]["Unique_Sensors"]
+sensor_types = params["UNIQUE_SENSOR_TYPES"]
+if nb_unique_sensors != len(sensor_types): print("Error: Problem with sensor type number")
+
+# For now only works with SHT45 and DS18B20 but can be expanded for other sensors
+if "SHT_45" in sensor_types:
+	# Routine for extraction of information on present SHT45s
+    SHT45 = True
+    nb_SHT_45 = params["SHT_45"]["Nb"]
+    pins_sht45 = params["SHT_45"]["Sensor_Pins"]
+    if nb_SHT_45 != len(pins_sht45): print("Error: Problem with SHT45 number")
+    i2c = []
+    for i in pins_sht45:
+        i2c.append(I2C(i["I2C"], sda = i["SDA"], scl = i["SCL"])) # Inititalising I2C connection 
+
+if "DS18B20" in sensor_types:
+	# Routine for extraction of information on present DS18B20s
+    DS18B20 = True
+    nb_DS18B20 = params["DS18B20"]["Nb"]
+    addresses = params["DS18B20"]["adrss"]
+    if nb_DS18B20 != len(addresses): print("Error: Problem with DS18B20 number")
+    ds_pin = Pin(params["DS18B20"]["Pin"])
+    ds_sensor = ds18x20.DS18X20(onewire.OneWire(ds_pin))
+
+led = Pin(25, Pin.OUT) # for debugging only
+
 ERROR_CODE = const(999)
 REGISTER_HREG = const(93)
 COIL = const(123)
@@ -21,35 +52,47 @@ def my_coil_set_cb(reg_type, address, val):
     while maintaining the decision of host on sleep (the host sets the coil to 0 for sleep"""
     if val==0:
         time.sleep(2) # we sleep after the information has been read
+        # Since this is only a time.sleep it is for debugging purposes
     else:
         print("No sleep") # in case something goes wrong
 
 def my_reg_get_cb(reg_type, address, val):
     led.on()
-    try:
-        sht = sht4x.SHT4X(i2c)
-        #sht.reset()
-        time.sleep(0.1)
-        temperature, relative_humidity = sht.measurements
-    except:
-        try:
-            sht = sht4x.SHT4X(i2c)
-            sht.reset()
-            time.sleep(0.1)
-            temperature, relative_humidity = sht.measurements
-        except:
-            temperature = ERROR_CODE
-            relative_humidity = ERROR_CODE
-    client.set_hreg(address,(math.trunc(temperature),math.trunc(relative_humidity)))
+    values = ()
+    if SHT45:
+        for i in i2c: # do the loop on the number of SHT45 devices connected
+            try:
+                sht = sht4x.SHT4X(i)
+                time.sleep(0.1)
+                temperature, relative_humidity = sht.measurements
+            except:
+                try:
+                    sht = sht4x.SHT4X(i2c)
+                    sht.reset()
+                    time.sleep(0.1)
+                    temperature, relative_humidity = sht.measurements
+                except:
+                    temperature = ERROR_CODE
+                    relative_humidity = ERROR_CODE
+            values.append(math.trunc(temperature), math.trunc(relative_humidity))
+    if DS18B20: # Do the loop for number of DS18B20 connected (all on same pin since one-wire)
+        ds_sensor.convert_temp()
+        time.sleep_ms(750)
+        for i in addresses:
+            try:
+                values.append(math.trunc(ds_sensor.read_temp(rom)))
+            except:
+                values.append(ERROR_CODE)
+    client.set_hreg(address,values)
     print('Custom callback, called on getting {} at {}, currently: {}'.format(reg_type, address, val))
     led.off()
-#i2c = I2C(1, sda=Pin(14), scl=Pin(15), freq=400000)  # Correct I2C pins for RP2040
+
 # Set the pins for communication
 rtu_pins = (Pin(0), Pin(1))
 uart_id = 0 # the corresponding ID for the uart
 
 client = ModbusRTU(
-    addr = CLIENT_ADDRESS,
+    addr = client_address,
     pins = rtu_pins,
     baudrate = 9600,
     data_bits = 8,
