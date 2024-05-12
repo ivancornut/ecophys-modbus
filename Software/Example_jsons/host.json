@@ -1,0 +1,6 @@
+{
+    "_comment": "This is an example Json file to use with the host of Modbus protocol",
+    "GENERAL":{"Client_nb":2, "Time_Delta":15, "RTU_Pins":[0,1], "UART_ID":0},
+    "CLIENT_1":{"nb_values":4},
+    "CLIENT_2":{"nb_values":4}
+}

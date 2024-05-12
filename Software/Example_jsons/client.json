@@ -1,0 +1,7 @@
+{
+    "_comment": "This is an example Json file to use with the client of Modbus protocol",
+    "GENERAL":{"Client_ID":1,"Unique_Sensors": 2},
+    "UNIQUE_SENSOR_TYPES":["SHT_45","DS18B20"],
+    "SHT_45":{"Nb":1, "Sensor_Pins":[{"I2C":1,"SDA":14,"SCL":15}]},
+    "DS18B20":{"Pin":0,"Nb":5, "adrss":[125, 554, 254, 147, 772]}
+}
