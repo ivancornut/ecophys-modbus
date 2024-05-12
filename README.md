@@ -8,4 +8,4 @@ We aim to build a low-cost, robust and resilient sensor network to characterize 
 ### Host
 The Host of our network is either a Pi Pico microcontroller with an adafruit datalogging shield or a RS-485 capable datalogger such as those provided by Campbell scientific. 
 ### Clients
-Clients of the network are Pi Picos ([here](https://www.raspberrypi.com/products/raspberry-pi-pico/)) with a UART to RS-485 Grove module from Seed Studio ([here]([url](https://wiki.seeedstudio.com/Grove-RS485/))). They are meant to consume the least power possible whilst still reading useful sensors by sleeping as much as possible. 
+Clients of the network are Pi Picos ([here](https://www.raspberrypi.com/products/raspberry-pi-pico/)) with a UART to RS-485 Grove module from Seed Studio ([here](https://wiki.seeedstudio.com/Grove-RS485/)). They are meant to consume the least power possible whilst still reading useful sensors by sleeping as much as possible. 
