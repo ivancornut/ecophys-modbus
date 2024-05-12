@@ -1,5 +1,17 @@
 # Ecophys-Modbus
-Using Pi Picos, RS485 and ModBus to create robust environmental networks tahta are able to operate in constrained conditions (low access to ressources, harsh climate, etc). 
+Using Pi Picos, RS485 and ModBus to create robust environmental networks tahta are able to operate in constrained conditions (low access to ressources, harsh climate, etc).
+
+- [Ecophys-Modbus](#ecophys-modbus)
+  * [Objectives](#objectives)
+  * [Network hardware composition](#network-hardware-composition)
+    + [Host](#host)
+    + [Clients](#clients)
+    + [Cable](#cable)
+    + [Interconnection](#interconnection)
+    + [Sensors used in this project](#sensors-used-in-this-project)
+      - [Sensirion SHT45](#sensirion-sht45)
+      - [DS18B20](#ds18b20)
+      - [ADS1106](#ads1106)
 
 ## Objectives
 We aim to build a low-cost, robust and resilient sensor network to characterize heterogeneous environments. In our case we work mainly in complex cocoa agroforestry systems in Central Africa (Cameroon). These systems are multi-layered and have a high diverity of shade and understory trees. In this context placing a few micro-environmental sensors is not sufficient to guarantee a good estimation of the effects of shade trees on the micro-evironment of cocoa trees.
