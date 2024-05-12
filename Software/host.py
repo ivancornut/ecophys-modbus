@@ -4,15 +4,16 @@ import time, json
 
 # Open the file containing parameters for this sensor node
 with open('host.json') as f:
-	read_data = f.read()
+    read_data = f.read()
 # Parse the json file output
 params = json.loads(read_data)
 
 # Count the number of clients and the number of values to retrieve per client
 nb_clients = params["GENERAL"]["Client_nb"]
 nb_values = [] # number of values per client
+print(params)
 for i in range(1, nb_clients+1):
-     nb_values.append(params["ClIENT_"+str(i)]["nb_values"])
+     nb_values.append(params["CLIENT_"+str(i)]["nb_values"])
 if len(nb_values) != nb_clients: print("Error on nb of clients")
 
 # retrieve the UART Pins
