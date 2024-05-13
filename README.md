@@ -3,7 +3,7 @@ Using Pi Picos, RS485 and ModBus to create robust environmental networks that ar
 
 - [Ecophys-Modbus](#ecophys-modbus)
   * [Objectives](#objectives)
-  * [Network hardware composition](#network-hardware-composition)
+  * [Network hardware composition](#hardware)
     + [Host](#host)
     + [Clients](#clients)
     + [Cable](#cable)
@@ -18,7 +18,7 @@ Using Pi Picos, RS485 and ModBus to create robust environmental networks that ar
 ![plot](agroforest.JPG)
 We aim to build a low-cost, robust and resilient sensor network to characterize heterogeneous environments. In our case we work mainly in complex cocoa agroforestry systems in Central Africa (Cameroon). These systems are multi-layered and have a high diverity of shade and understory trees. In this context placing a few micro-environmental sensors is not sufficient to guarantee a good estimation of the effects of shade trees on the micro-evironment of cocoa trees.
 
-## Network hardware composition
+## Hardware
 ![plot](network_diagram.png)
 ### Host
 The Host of our network is either a Pi Pico microcontroller with an adafruit datalogging shield or a RS-485 capable datalogger such as those provided by Campbell scientific. 
