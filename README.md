@@ -3,7 +3,7 @@ Using Pi Picos, RS485 and ModBus to create robust environmental networks that ar
 
 - [Ecophys-Modbus](#ecophys-modbus)
   * [Objectives](#objectives)
-  * [Network hardware composition](#hardware)
+  * [Hardware](#hardware)
     + [Host](#host)
     + [Clients](#clients)
     + [Cable](#cable)
