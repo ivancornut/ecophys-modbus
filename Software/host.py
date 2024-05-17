@@ -8,6 +8,7 @@ with open('host.json') as f:
 # Parse the json file output
 params = json.loads(read_data)
 
+sleep_time = params["GENERAL"]["Time_Delta"]*60 * 1000 - 60*1000
 # Count the number of clients and the number of values to retrieve per client
 nb_clients = params["GENERAL"]["Client_nb"]
 nb_values = [] # number of values per client
@@ -33,15 +34,27 @@ host = ModbusRTUMaster(
     )
 
 while True:
-    for i in range(1,nb_clients+1):
-        try:
-            data = host.read_holding_registers(slave_addr=i, starting_addr=93, register_qty=nb_values[i])
-            print('Value of Holding register 93: {}'.format(data))
-            led.off()
-            time.sleep(0.5)
-        except:
-            print("Problem with Client n°: "+str(i))
-            led.on()
-            time.sleep(0.5)
-    time.sleep(5)
+    with open('data.txt','a') as f:
+        for i in range(1,nb_clients+1):
+            f.write(str(i))
+            try:
+                
+                data = host.read_holding_registers(slave_addr=i, starting_addr=93, register_qty=nb_values[i])
+                for d in data:
+                    f.write(","+str(d))
+                print('Value of Holding register 93: {}'.format(data))
+                try:
+                    host.write_single_coil(slave_addr=i, output_address=123, output_value = 0)
+                    print("Successfully set sleeping coil")
+                except:
+                    print("Unsuccessful at setting sleepin coil")
+                led.off()
+                time.sleep(0.25)
+                f.write("\n")
+            except:
+                print("Problem with Client n°: "+str(i))
+                f.write(",1,1,1" + "\n")
+                led.on()
+                time.sleep(0.25)
+    machine.lightsleep(sleep_time)
     
