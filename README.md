@@ -36,6 +36,21 @@ The software is divided in two main categories: the [/Software/host.py](/Softwar
 
 The information about each device (ID, sensors, etc) is not hardcoded but is read by either the host or the client micropython program from a json file on the device. Example jsons for both host and clients are availabe in the [Examples](/Software/Example_jsons/) directory.
 
+### Host
+
+### Clients
+The clients are meant to read sensor data, store it in their holding registers and return it when called by the host device. Since this project is powered by solar panels and batteries in the field they must be optimised for minimal consumption.
+
+#### Handling Energy consumption
+The clients are built to stay the least time possible in an active mode and quickly go back to sleep. This is done by the host putting the clients to sleep by setting the appropriate coil to 0 (see client.py). On the Pi Pico there are a few ways to get the device to sleep. The _time.delay(s)_ function that merely acts as a delay in the code. The _machine.lightsleep(ms)_ and _machine.deepsleep(ms)_ which pause code execution and put the microcontroller in low power mode. Since for the Pico energy consumption is comparable in _machine.lightsleep()_ and _machine.deeplseep()_ when a timeout is specified, it is easier to just use the _lightsleep_ when energy saving is needed. It might be useful however to reset the client devices every day and a _deepsleep_ could be useful in that respect. If a measurement is taken every 15 min with a 1min wake time, the power consumption at 3.3V is 7.22 mAh or 0.02 Wh per day of measure per client device. 
+| Mode          | Power Consumption (3.3V at VBUS) |Effects | 
+|:---------------:|:---------------:|:---------------:|
+| Running  | 25 mA  | Null  |
+| time.sleep(s)  | 20 mA  | Just pauses execution, marginal effects on PWR  |
+| machine.lightsleep(ms)  | 1.5 mA  | Pauses execution with effects on PWR |
+| machine.deepsleep(ms)  | 1.5 mA  | Will reset device after timeout |
+| machine.deepsleep(no time)  | >1 mA  | Will reset device but no way to restart|
+
 ## Sensors used in this project
 ### Sensirion SHT45
 The SHT45 from sensirion ([here](https://sensirion.com/products/catalog/SHT45/)) is a very accurate air temperature (+- 0.1°C) and air humidity sensor (+- 1%). This is largely sufficient for micro-climate assessment and is better than most commercially available air temp/hum sensors. It has the added benefit of having a heater to avoid creep in high humidity environments. It uses I2C as a communication protocol, there is already a micropython library available ([here](https://github.com/jposada202020/MicroPython_SHT4X/tree/master)) and we have easily developped a PCB and sensor casing design ([here](https://github.com/ivancornut/temp_hum_ecosols)).
