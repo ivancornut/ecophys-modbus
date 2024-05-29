@@ -3,6 +3,7 @@ from umodbus.serial import ModbusRTU
 from machine import Pin, I2C
 from micropython_sht4x import sht4x
 import time, onewire, ds18x20, math, json
+import ads1x15
 
 ERROR_CODE = const(9999) # error code when sensor data cannot be read
 REGISTER_HREG = const(93) # address of first register that contains the data
@@ -43,6 +44,20 @@ if "DS18B20" in sensor_types:
     if nb_DS18B20 != len(addresses): print("Error: Problem with DS18B20 number")
     ds_pin = Pin(params["DS18B20"]["Pin"]) # The GPIO pin on which DS18B20s are connected
     ds_sensor = ds18x20.DS18X20(onewire.OneWire(ds_pin)) # creating the ds object
+
+Dendro = True
+if "Dendrometer" in sensor_types:
+    # Routine for reading the outputs of ADC reading dendrometers
+    addr = 72
+    gain = 1
+    Dendro = True
+    nb_dendro = params["Dendrometer"]["Nb"] # Number of dendromets
+    activation_Pin = params["Dendrometer"]["Activation_Pin"]
+    print("There are " + str(nb_dendro) + " dendrometers on this client")
+    pins_ADC = params["Dendros"]["Sensor_Pins"] # I2C pins of the ADC
+    i2c_adc = I2C(pins_ADC["I2C"], sda = pins_ADC["SDA"], scl = pins_ADC["SCL"]) # creating I2C objects for the sensors
+    p0 = Pin(activation_Pin, Pin.OUT) # pin to power the lvdt
+    p0.value(0) # start by turning it off
 
 led = Pin(25, Pin.OUT) # for debugging only
 
@@ -89,6 +104,27 @@ def my_reg_get_cb(reg_type, address, val):
                 values.append(math.trunc(ds_sensor.read_temp(rom))*100) # reading values from sensor at address rom
             except:
                 values.append(ERROR_CODE)
+    if Dendrometer:
+        try:
+            ads = ads1x15.ADS1115(i2c, addr, gain)
+            try:
+                p0.on()
+                value1 = 0
+                value2 = 0
+                for i in range(0,10):
+                    value1 = value1 + ads.read(1,0)/10
+                    value2 = value2 + ads.read(1,1)/10
+                    sleep(0.1)
+        
+                voltage1 = ads.raw_to_v(value1)
+                voltage2 = ads.raw_to_v(value2)
+                ratio = voltage2/voltage1
+            except:
+                ratio = 9999
+            values.append(math.trunc(ratio*65000))
+        except:
+            values.append(9999)
+        p0.off()
     client.set_hreg(address,values) # Put all values inside the holding registers
     print('Custom callback, called on getting {} at {}, currently: {}'.format(reg_type, address, val))
     led.off()
