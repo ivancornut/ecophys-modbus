@@ -32,7 +32,9 @@ Clients of the network are Pi Picos ([here](https://www.raspberrypi.com/products
 ### Cable
 For the clients and the host to communicate we need to used a cable that is cable of transporting: power to the devices, A line of RS-485, B line of RS-485 and GND. We found that the most adapted cable for this use was the RJ45 cable. It is readily availble in Cameroon and has a total of 4 twisted pairs. One twisted pair is for A and B lines of RS485, one twisted pair is for +3V and one twisted pair + external shielding is for GND.
 ### Interconnection
-For the interconnections at each node we will use 3-way wago connectors, one for each (+V, GND, A, B). 
+For the interconnections at each node we will use four 3-way wago connectors, one for each (+V, GND, A, B). This meas that one is for arriving cable, one for departing cable and one for the device. 
+### Boxes
+We use standard electrical boxes that are water and dust proof (usually IP67). For the cables entering and exiting the box we use use the cable glands that are adapted to our cables. This guarantees better resistance against water and dust. 
 
 ## Software
 The software for this project is written in micropython for its ease of use by beginners. This is useful since these sensors are meant to be used by ecologists and biologists not people with big programming backgrounds. In this network efficiency is not a big issue and computing power neither. The use of the Pico on which micropython runs like a charm is also a reason. 
