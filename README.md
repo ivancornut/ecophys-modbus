@@ -44,8 +44,8 @@ The software is divided in two main categories: the [/Software/host.py](/Softwar
 
 ### Host-Datalogger
 #### Datalogger data retrieval and clock update
-To increase efficiency in the field when retrieving data and to avoid having to manipulate SD cards we have created a few scripts that can be found in the [datalogger](/Software/datalogger) directroy. The 
-
+To increase efficiency in the field when retrieving data and to avoid having to manipulate SD cards we have created a few scripts that can be found in the [datalogger](/Software/datalogger) directory. They allow one to update the datalogger shield RTC with the date time of the computer (useful to avoid drift) and to download a file on the SD card. Both these operations are run by the datalogger.sh script that makes heavy use of the [_mpremote_](https://docs.micropython.org/en/latest/reference/mpremote.html) command line tool. The clock is updated by setting the Pi Pico processor clock to the computer datetime (using _mpremote rtc --set_ and then using the Pi Pico processor datetime to set the external RTC module ([set_rtc_time.py](/Software/datalogger/set_rtc_time.py)). The SD card is downloaded by mounting the sd card ([read_sd.py](/Software/datalogger/read_sd.py)) and using the filesystem commands of mpremote (_mpremote fs cp_
+). 
 ### Clients
 The clients are meant to read sensor data, store it in their holding registers and return it when called by the host device. Since this project is powered by solar panels and batteries in the field they must be optimised for minimal consumption.
 
