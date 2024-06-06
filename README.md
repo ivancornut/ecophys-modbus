@@ -12,7 +12,7 @@ Using Pi Picos, RS485 and ModBus to create robust environmental networks that ar
   * [Sensors used in this project](#sensors-used-in-this-project)
     + [Sensirion SHT45](#sensirion-sht45)
     + [DS18B20](#ds18b20)
-    + [ADS1106](#ads1106)
+    + [Dendrometer/ADS1115](#Dendrometer/ADS1115)
 
 ## Objectives
 ![plot](agroforest.JPG)
@@ -21,7 +21,9 @@ We aim to build a low-cost, robust and resilient sensor network to characterize 
 ## Hardware
 ![plot](network_diagram.png)
 ### Host
-The Host of our network is either a Pi Pico microcontroller with an adafruit datalogging shield or a RS-485 capable datalogger such as those provided by Campbell scientific. 
+The Host of our network is either a Pi Pico microcontroller with an adafruit datalogging shield or a RS-485 capable datalogger such as those provided by Campbell scientific.
+#### Datalogger Host
+The datalogger host is made up of a Pi Pico with an Adafruit Pi Cowbell datalogger shield ([here](https://learn.adafruit.com/adafruit-picowbell-adalogger-for-pico?view=all)). This is useful since it includes both a real-time clock with a separate battery and an SD card holder that allows us to store more data than on the filesystem of the Pi itself. There are potentially other datalogging shields on the market. 
 ### Clients
 Clients of the network are Pi Picos ([here](https://www.raspberrypi.com/products/raspberry-pi-pico/)) with a UART to RS-485 Grove module from Seed Studio ([here](https://wiki.seeedstudio.com/Grove-RS485/)). They are meant to consume the least power possible whilst still reading useful sensors by sleeping as much as possible.
 ### Cable
@@ -32,10 +34,10 @@ For the interconnections at each node we will use 3-way wago connectors, one for
 ## Software
 The software for this project is written in micropython for its ease of use by beginners. This is useful since these sensors are meant to be used by ecologists and biologists not people with big programming backgrounds. In this network efficiency is not a big issue and computing power neither. The use of the Pico on which micropython runs like a charm is also a reason. 
 
-The software is divided in two main categories: the [/Software/host.py](/Software/host.py) (ex-master) device and the [/Software/client.py](/Software/client.py) (ex-slave) devices. The devices make use of the [micropython-modbus](https://github.com/brainelectronics/micropython-modbus?tab=readme-ov-file) library which provides all the functions necessary for RTU ModBus communication.
+### Why use ModBus
+Simply put [ModBus](https://en.wikipedia.org/wiki/Modbus) is the communications protocol that allows the devices on the network to communicate in an orderly fashion. There are hosts (ex-master) and clients (ex-slaves). There is only one host per network and up to 36 clients. The host is the only one that can call to clients to retrieve or write data. ModBus provides a useful framework for serial communication by standardising communication, checking for errors and avoiding conflicts. Clients each have a disctinctive address. Client devices have four different data structures: coils (1 bit), discrete inputs (1 bit), input registers (16 bits), and holding registers (16 bits). The host can read/write coils that are used for on/off operations mainly. Discrete inputs are read-only and are used to check status. Input registers are read-only and are used to store measurement values. Holding registers are read/write and used to store parameters. This is juste a very brief and simplified explananation but more can be read at these addresses: [https://www.lammertbies.nl/comm/info/modbus](https://www.lammertbies.nl/comm/info/modbus), [https://csimn.com/MHelp-VP3-TM/vp3-tm-appendix-C.html](https://csimn.com/MHelp-VP3-TM/vp3-tm-appendix-C.html)
 
-The information about each device (ID, sensors, etc) is not hardcoded but is read by either the host or the client micropython program from a json file on the device. Example jsons for both host and clients are availabe in the [Examples](/Software/Example_jsons/) directory.
-
+The software is divided in two main categories: the [/Software/host.py](/Software/host.py) device and the [/Software/client.py](/Software/client.py) devices. The devices make use of the [micropython-modbus](https://github.com/brainelectronics/micropython-modbus?tab=readme-ov-file) library which provides all the functions necessary for RTU ModBus communication. The information about each device (ID, sensors, etc) is not hardcoded but is read by either the host or the client micropython program from a json file on the device. Example jsons for both host and clients are availabe in the [Examples](/Software/Example_jsons/) directory. This means that all client devices on the network share the same client.py file with different client.json files. 
 ### Host
 
 ### Clients
@@ -56,5 +58,5 @@ The clients are built to stay the least time possible in an active mode and quic
 The SHT45 from sensirion ([here](https://sensirion.com/products/catalog/SHT45/)) is a very accurate air temperature (+- 0.1°C) and air humidity sensor (+- 1%). This is largely sufficient for micro-climate assessment and is better than most commercially available air temp/hum sensors. It has the added benefit of having a heater to avoid creep in high humidity environments. It uses I2C as a communication protocol, there is already a micropython library available ([here](https://github.com/jposada202020/MicroPython_SHT4X/tree/master)) and we have easily developped a PCB and sensor casing design ([here](https://github.com/ivancornut/temp_hum_ecosols)).
 ### DS18B20
 The DS18B20 from Analog devices ([here](https://www.analog.com/en/products/ds18b20.html)) is a one-wire temperature sensor with an accuracy of +-0.5°C out of the box. There is often an issue with forged sensors but this can be avoided by sourcing this sensor at reputable vendors. The accuracy of genuine DS18B20 is often better than 0.5°C (personnal observation). Its main adavantages are its physical format (TO-92), the use of one-wire protocol, implementation in base micropython and its low-drift ([here](https://www.mdpi.com/2673-4591/10/1/56)). It will be used mainly for soil temperature. In the future it could advantagily be replaced by the MAX30207 ([here](https://www.analog.com/en/products/max30207.html)) that has +- 0.1°C accuracy. 
-### Dendrometer
+### Dendrometer/ADS1115
 This sensor was developped in house ([here](https://github.com/ivancornut/ecosols-dendro)) to follow tree growth and water status.This sensor uses the ADS1115, a 16-bit ADC that we use to measure the output of a linear potentiometer leveraged in our dendrometer. It uses the I2C protocol to communicate and has an already developped micropython library ([here](https://github.com/robert-hh/ads1x15)). There are several modules that make this IC readily usable.
