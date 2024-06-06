@@ -10,7 +10,7 @@ Using Pi Picos, RS485 and ModBus to create robust environmental networks that ar
     + [Interconnection](#interconnection)
   * [Software](#software) 
   * [Sensors used in this project](#sensors-used-in-this-project)
-    + [Sensirion SHT45](#sensirion-sht45)
+    + [Microclimate-SHT45](#Microclimate-SHT45)
     + [DS18B20](#ds18b20)
     + [Dendrometer-ADS1115](#Dendrometer-ADS1115)
 
@@ -54,8 +54,8 @@ The clients are built to stay the least time possible in an active mode and quic
 | machine.deepsleep(no time)  | >1 mA  | Will reset device but no way to restart|
 
 ## Sensors used in this project
-### Sensirion SHT45
-The SHT45 from sensirion ([here](https://sensirion.com/products/catalog/SHT45/)) is a very accurate air temperature (+- 0.1°C) and air humidity sensor (+- 1%). This is largely sufficient for micro-climate assessment and is better than most commercially available air temp/hum sensors. It has the added benefit of having a heater to avoid creep in high humidity environments. It uses I2C as a communication protocol, there is already a micropython library available ([here](https://github.com/jposada202020/MicroPython_SHT4X/tree/master)) and we have easily developped a PCB and sensor casing design ([here](https://github.com/ivancornut/temp_hum_ecosols)).
+### Microclimate-SHT45
+We have developped microclimate sensor with a PCB and radiation shield ([here](https://github.com/ivancornut/temp_hum_ecosols)). It uses the SHT45 from sensirion ([here](https://sensirion.com/products/catalog/SHT45/)) that is a very accurate air temperature (+- 0.1°C) and air humidity sensor (+- 1%). This is largely sufficient for micro-climate assessment and is better than most commercially available air temp/hum sensors. It has the added benefit of having a heater to avoid creep in high humidity environments. It uses I2C as a communication protocol, and there is already a micropython library available ([here](https://github.com/jposada202020/MicroPython_SHT4X/tree/master)).
 ### DS18B20
 The DS18B20 from Analog devices ([here](https://www.analog.com/en/products/ds18b20.html)) is a one-wire temperature sensor with an accuracy of +-0.5°C out of the box. There is often an issue with forged sensors but this can be avoided by sourcing this sensor at reputable vendors. The accuracy of genuine DS18B20 is often better than 0.5°C (personnal observation). Its main adavantages are its physical format (TO-92), the use of one-wire protocol, implementation in base micropython and its low-drift ([here](https://www.mdpi.com/2673-4591/10/1/56)). It will be used mainly for soil temperature. In the future it could advantagily be replaced by the MAX30207 ([here](https://www.analog.com/en/products/max30207.html)) that has +- 0.1°C accuracy. 
 ### Dendrometer-ADS1115
