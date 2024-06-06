@@ -10,7 +10,7 @@ Using Pi Picos, RS485 and ModBus to create robust environmental networks that ar
     + [Interconnection](#interconnection)
   * [Software](#software)
     + [ModBus](#Why-use-ModBus)
-    + [Host](#Host)
+    + [Host-Datalogger](#Host-Datalogger)
     + [Clients](#Clients) 
   * [Sensors used in this project](#sensors-used-in-this-project)
     + [Microclimate-SHT45](#Microclimate-SHT45)
