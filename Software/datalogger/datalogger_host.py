@@ -13,18 +13,16 @@ def error_data_string(nb=1):
         datafmted = datafmted+","+str(999)
     return datafmted
 
-time.sleep(5)
+time.sleep(5) # this allows time to connect to device before it lightsleeps
+
 # Open the file containing parameters for this sensor node
 with open('host.json') as f:
     read_data = f.read()
-
-
 params = json.loads(read_data) # Parse the json file output
 
-# Setup cs pin for SD SPI$
+# Setup cs pin for SD SPI
 cs = Pin(17,Pin.OUT)
-# setup SPI for the SD card
-spi = machine.SPI(0,
+spi = machine.SPI(0, # setup SPI for the SD card
                   baudrate=1000000,
                   polarity=0,
                   phase=0,
@@ -36,22 +34,22 @@ spi = machine.SPI(0,
 sd = sdcard.SDCard(spi, cs)
 filsys = vfs.VfsFat(sd)
 
-sleep_time = params["GENERAL"]["Time_Delta"]*60 * 1000 - 30*1000 # the Time during which the host should sleep (it leaves 1min for execution of tasks)
+sleep_time_ms = params["GENERAL"]["Time_Delta"]*60 * 1000 - 30*1000 # the time during which the host should sleep (it leaves 1min for execution of tasks)
 sleep_time_client_s = params["GENERAL"]["Time_Delta"]*60
 sleep_time_minutes = params["GENERAL"]["Time_Delta"]
 
 nb_clients = params["GENERAL"]["Client_nb"] # Count the number of clients and the number of values to retrieve per client
 nb_values = [] # number of values per client
-print(params)
 for i in range(1, nb_clients+1):
      nb_values.append(params["CLIENT_"+str(i)]["nb_values"])
 if len(nb_values) != nb_clients: print("Error on nb of clients") # check consistency
 
 # Setup rtc to read it and save in data
+# this is the clock of the cowbell datalogger shield
 i2c_clock = I2C(0,scl=Pin(5), sda=Pin(4))
 rtc = urtc.PCF8523(i2c_clock)
 
-# retrieve the UART Pins
+# retrieve the UART Pins for the Modbus
 rtu_pins = (Pin(params["GENERAL"]["RTU_Pins"][0]), Pin(params["GENERAL"]["RTU_Pins"][1])) # the GPIO pins
 uart_id = params["GENERAL"]["UART_ID"] # The UART ID, see Pico Pinout
 
@@ -67,9 +65,7 @@ host = ModbusRTUMaster( # setup the Modbus object
     uart_id = uart_id
     )
 
-while True:
-
-    
+while True:  
     try:
         SD = True
         vfs.mount(filsys, "/sd")
@@ -83,9 +79,12 @@ while True:
         time.sleep(10)
     for i in range(1, nb_clients+1):
         try:
+            # set the sleep time on client devices
             host.write_single_register(slave_addr=i, register_address=250, register_value = sleep_time_client_s, signed = False)
-        except:
+            time.sleep(0.25)
+        except Exception as error:
             print("Could not set sleep time at client "+str(i))
+            print(error)
     with open(file,'a') as f:
         for i in range(1,nb_clients+1):
             datetime = rtc.datetime()
@@ -94,11 +93,9 @@ while True:
             try:
                 # Reading the holding registers of the client device
                 # Starts at the starting address and until the starting address + register_qty
-                print(nb_values[i-1])
                 data = host.read_holding_registers(slave_addr=i, starting_addr=93, register_qty=nb_values[i-1])
                 for d in data: # iterate over data array
                     f.write(","+str(d)) # write each value in csv file
-                print("DateTime", str(datetime.minute))
                 print('Value of Holding register 93: {}'.format(data)) # for debugging
                 time.sleep(0.25)
                 try:
@@ -110,7 +107,7 @@ while True:
                     print(error)
                 led.off()
                 f.write("\n") # prepare for next device
-                time.sleep(0.25)
+                time.sleep(0.5)
             except Exception as error:
                 print("Problem with Client n°: "+str(i))
                 print(error)
@@ -119,6 +116,6 @@ while True:
                 time.sleep(0.25)
     if SD:
         vfs.umount("/sd")
-    machine.lightsleep(sleep_time) # put host to sleep for an amount of time to save power
+    machine.lightsleep(sleep_time_ms) # put host to sleep for an amount of time to save power
     #time.sleep(10)
     
