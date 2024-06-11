@@ -2,6 +2,6 @@
     "GENERAL":{"Client_ID":1,"Unique_Sensors": 2, "RTU_Pins":[0,1], "UART_ID":0},
     "UNIQUE_SENSOR_TYPES":["SHT_45","DS18B20","Dendrometer"],
     "SHT_45":{"Nb":1, "Sensor_Pins":[{"I2C":1,"SDA":14,"SCL":15}]},
-    "DS18B20":{"Pin":8,"Nb":5, "adrss":[125, 554, 254, 147, 772]}
+    "DS18B20":{"Pin":8,"Nb":5, "adrss":[125, 554, 254, 147, 772]},
     "Dendrometer":{"Nb":1, "Sensor_Pins":{"I2C":1, "SDA":14, "SCL":15}, "Activation_Pin":12}
 }
