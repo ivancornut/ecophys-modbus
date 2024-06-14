@@ -93,7 +93,7 @@ while True:
             try:
                 # Reading the holding registers of the client device
                 # Starts at the starting address and until the starting address + register_qty
-                data = host.read_holding_registers(slave_addr=i, starting_addr=93, register_qty=nb_values[i-1])
+                data = host.read_holding_registers(slave_addr=i, starting_addr=93, register_qty=nb_values[i-1], signed = False)
                 for d in data: # iterate over data array
                     f.write(","+str(d)) # write each value in csv file
                 print('Value of Holding register 93: {}'.format(data)) # for debugging
