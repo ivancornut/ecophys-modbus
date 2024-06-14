@@ -12,6 +12,63 @@ COIL = const(123) # address of the sleep coil
 
 register_length = 0
 
+def temp_hum(i2c_object, data_tuple):
+    try:
+        sht = sht4x.SHT4X(i2c_object) # initialize sh45 objects
+        time.sleep(0.1) # give some time to device
+        temperature, relative_humidity = sht.measurements # read sensor
+        data_tuple = data_tuple + (math.trunc(temperature*100), math.trunc(relative_humidity*100)) # (x100 for floats to int)
+    except:
+        try: # in case measurement is impossible try resetting
+            sht = sht4x.SHT4X(i2c) # initialize sh45 objects
+            sht.reset() # soft reset the SHT45
+            time.sleep(0.1) # give some time to device
+            temperature, relative_humidity = sht.measurements # read sensor
+            data_tuple = data_tuple + (math.trunc(temperature*100), math.trunc(relative_humidity*100)) # (x100 for floats to int)
+        except:
+            temperature = ERROR_CODE # if it goes wrong write 9999
+            relative_humidity = ERROR_CODE # if it goes wrong write 9999
+            data_tuple = data_tuple + (math.trunc(temperature), math.trunc(relative_humidity))
+    return data_tuple
+
+def measure_dendro(i2c_object,dendro_addr, dendro_gain, data_tuple, excite_pin):
+    excite_pin.on()
+    time.sleep(0.1)
+    try:
+        ads = ads1x15.ADS1115(i2c_object, dendro_addr, dendro_gain)
+        try:
+            value1 = 0
+            value2 = 0
+            for i in range(0,10): # we do this to average measurement and avoid noise
+                value1 = value1 + ads.read(1,0)/10
+                value2 = value2 + ads.read(1,1)/10
+                time.sleep(0.1)
+            voltage1 = ads.raw_to_v(value1)
+            voltage2 = ads.raw_to_v(value2)
+            ratio = voltage2/voltage1 # this ratio is linearly related to displacement
+            print(ratio)
+        except Exception as error:
+            print(error)
+            ratio = 0.99
+        ratio = min(1,ratio)
+        data_tuple = data_tuple+(math.trunc(ratio*65000),)
+    except Exception as error:
+        print(error)
+        data_tuple = data_tuple + (65000,)
+    excite_pin.off()
+    return data_tuple
+
+def read_ds18B20s(Sensor_pin_def,addresses, data_tuple):
+    Sensor_pin_def.convert_temp() # function to tell sensors to start measurement routine
+    time.sleep_ms(750) # time it takes sensors to read the temp
+    for i in addresses:
+        try:
+            ds_temp = Sensor_pin_def.read_temp(i)
+            data_tuple = data_tuple + (math.trunc(ds_temp)*100) # reading values from sensor at address rom
+        except:
+            data_tuple = data_tuple+(ERROR_CODE)
+    return data_tuple
+
 # Open the file containing parameters for this sensor node
 with open('client.json') as f:
     read_data = f.read()
@@ -69,7 +126,20 @@ led = Pin(25, Pin.OUT) # for debugging only
 
 register_starting_values = (0,) * register_length
 
-values = register_starting_values
+# fill in the first values in the register
+try:
+    values = ()
+    if SHT45:
+        for i in i2c: # do the loop on the number of SHT45 devices connected
+            values = temp_hum(i,values)
+    if DS18B20: # Do the loop for number of DS18B20 connected (all on same pin since one-wire)
+        read_ds18B20s(ds_sensor,addresses,values)
+    if Dendrometer:
+        values = measure_dendro(i2c_adc,addr, gain,values,p0)
+except:
+    values = register_starting_values
+
+
 #def my_reg_set_cb(reg_type, address, val):
 #    print('Custom callback, called on setting {} at {} to: {}'.format(reg_type, address, val))
 
@@ -77,7 +147,10 @@ def my_coil_set_cb(reg_type, address, val):
     """This function is to put the device to sleep following the retrieval of value by host
     while maintaining the decision of host on sleep (the host sets the coil to 0 for sleep"""
     global values
-    time_step_s = client.get_hreg(250)
+    try:
+        time_step_s = client.get_hreg(250)
+    except:
+        time_step_s = 60
     if val:
         print("Sleeping coil set to sleep for " + str(time_step_s) + " s")
         time.sleep(0.25)
@@ -85,63 +158,16 @@ def my_coil_set_cb(reg_type, address, val):
             machine.lightsleep(time_step_s*1000 - 60*1000) # we sleep after the information has been read
         else:
             machine.lightsleep(time_step_s*1000 - 3000)
-        # Since this is only a time.sleep it is for debugging purposes
-        # machine.lightsleep() should be called for real world implementations
     else:
         print("No sleep") # in case something goes wrong
     values = ()
     if SHT45:
         for i in i2c: # do the loop on the number of SHT45 devices connected
-            try:
-                sht = sht4x.SHT4X(i) # initialize sh45 objects
-                time.sleep(0.1) # give some time to device
-                temperature, relative_humidity = sht.measurements # read sensor
-                values = values + (math.trunc(temperature*100), math.trunc(relative_humidity*100)) # write to register (x100 for floats to int)
-            except:
-                try: # in case measurement is impossible try resetting
-                    sht = sht4x.SHT4X(i2c) # initialize sh45 objects
-                    sht.reset() # soft reset the SHT45
-                    time.sleep(0.1) # give some time to device
-                    temperature, relative_humidity = sht.measurements # read sensor
-                    values = values + (math.trunc(temperature*100), math.trunc(relative_humidity*100)) # write to register (x100 for floats to int)
-                except:
-                    temperature = ERROR_CODE # if it goes wrong write 9999
-                    relative_humidity = ERROR_CODE # if it goes wrong write 9999
-                    values = values + (math.trunc(temperature), math.trunc(relative_humidity)) # write to holding register so host device knows something is wrong
+            values = temp_hum(i,values)
     if DS18B20: # Do the loop for number of DS18B20 connected (all on same pin since one-wire)
-        ds_sensor.convert_temp() # function to tell sensors to start measurement routine
-        time.sleep_ms(750) # time it takes sensors to read the temp
-        for i in addresses:
-            try:
-                values = values + (math.trunc(ds_sensor.read_temp(rom))*100) # reading values from sensor at address rom
-            except:
-                values = values+(ERROR_CODE)
+        read_ds18B20s(ds_sensor,addresses,values)
     if Dendrometer:
-        try:
-            ads = ads1x15.ADS1115(i2c_adc, addr, gain)
-            try:
-                p0.on()
-                value1 = 0
-                value2 = 0
-                for i in range(0,10):
-                    value1 = value1 + ads.read(1,0)/10
-                    value2 = value2 + ads.read(1,1)/10
-                    time.sleep(0.1)
-        
-                voltage1 = ads.raw_to_v(value1)
-                voltage2 = ads.raw_to_v(value2)
-                ratio = voltage2/voltage1
-                print(ratio)
-            except Exception as error:
-                print(error)
-                ratio = 0.99
-            print(math.trunc(ratio*65000))
-            values = values+(math.trunc(ratio*65000),)
-        except Exception as error:
-            print(error)
-            values = values + (9999,)
-        p0.off()
-    print(values)
+        values = measure_dendro(i2c_adc,addr, gain,values,p0)
 
 def my_reg_get_cb(reg_type, address, val):
     led.on() # for debugging
